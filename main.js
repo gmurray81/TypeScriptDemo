@@ -7,92 +7,6 @@ function extend(baseClass) {
 }
 Function.prototype.extend = extend;
 
-function Animal() {
-    type = "Animal";
-}
-Animal.prototype.speak = function () {
-    console.log(this.type + " speaks: ");
-}
-Animal.prototype.think = function (subject) {
-    return new Promise(function (resolve, reject) {
-        setTimeout(function () {
-            console.log("thinking some.... about " + subject);
-
-            setTimeout(function () {
-                console.log("thought some more... about " + subjct);
-
-                resolve("finished thinking about " + subject);
-            }, this.secondThoughtsTime);
-        }, this.thinkingTime);
-    });
-}
-Animal.prototype.addChildren = function(children) {
-    var Me = this.constructor;
-    children.map(function (child) {
-        this.chidren.push(new Me(this.noisiness + 1, child.name, child.age));
-    });
-}
-
-function Cat(name, age, noisiness) {
-    name = name;
-    this.age = age;
-    this.thinkingTime = 2000;
-    this.noisiness = noisiness;
-}
-
-Cat.extend(Animal);
-
-Cat.prototype.speak = function () {
-    Animal.speak();
-    for (var i = 0; i < noisiness; i++) {
-        console.log("meow ");
-    }
-}
-
-function Dog(name, age, noisiness) {
-    this.name = name;
-    this.age = age;
-    this.thinkingTime = 500;
-    noisiness = noisiness;
-}
-
-Dog.extend(Animal);
-
-Dog.prototype.speak = function () {
-    for (var i = 0; i < noisiness; i++) {
-        console.log("bark ");
-    }
-}
-
-
-var cat = new Cat();
-var dog = new Dog(4);
-
-cat.speak();
-dog.speak();
-
-cat.think();
-dog.think();
-
-cat.think().then(function (result) {
-    console.log("cat " + result);
-
-    dog.think().then(function () {
-        console.log("dog " + result);
-
-        Promise.all([dog.think(), cat.think()]).then(function (result) {
-            console.log("animals " + result);
-        })
-    })
-    .error(function () {
-        console.log("dog had a problem thinking")
-    });
-})
-.error(function () {
-    console.log("cat had a problem thinking");
-});
-
-
 function Shape(centerX, centerY) {
     this.centerX = centerX;
     this.centerY = centerX;
@@ -108,6 +22,34 @@ Shape.prototype.area = function () {
 Shape.prototype.render = function (context) {
 
 }
+Shape.prototype.getBoundingBox = function () {
+    return null;
+}
+Shape.prototype.collidesWith = function (otherShape) {
+    var otherBox = otherShape.getBoundingBox();
+    var thisBox = this.getBoundingBox();
+
+    var otherBoxRight = otherBox.left + otherBox.with;
+    var thisBoxRight = thisBox.left + thisBox.width;
+    var otherBoxBottom = otherBox.left + otherBox.height;
+    var thisBoxBottom = thisBox.top + thisBox.height;
+
+    if (thisBoxRight < otherBox.left ||
+        thisBox.Left > otherBoxRight) {
+        return false;
+    }
+    if  (thisBoxBottom < otherBox.top ||
+        thisBox.top > otherBoxBottom) {
+        return false;
+    }
+    return true;
+}
+Shape.prototype.getFillColor = function () {
+    var red = 0 + 255 * Math.min(1, this.colliding / 5.0);
+
+    return "rgba(" + red + ", 0, 0, .8)";
+}
+
 
 function Circle(centerX, centerY, radius) {
     Shape.constructor.call(this, centerX, centerY);
@@ -124,8 +66,8 @@ Circle.prototype.area = function () {
         this.radius * this.radius;
 }
 Circle.prototype.render = function (context) {
-    context.strokeStyle = "green";
-    context.fillStyle = "gray"
+    context.strokeStyle = "black";
+    context.fillStyle = this.getFillColor();
     context.lineWidth = 2;
 
     context.beginPath();
@@ -147,8 +89,8 @@ Rectangle.prototype.area = function () {
 }
 
 Rectangle.prototype.render = function (context) {
-    context.strokeStyle = "teal";
-    context.fillStyle = red;
+    context.strokeStyle = "black";
+    context.fillStyle = this.getFillColor();
     context.fillRect(
         this.centerX - this.width / 2.0,
         this.centerY - this.height / 2.0,
@@ -179,3 +121,124 @@ var rectangle = new Reactangle(
     rect.height);
 
 var shapes = [circle, circle2, rect];
+
+shapes.map(function (index, shape) {
+    shape.render(context);
+})
+
+function ShapeCollection(shapes) {
+    this.shapes = [];
+    shapes.map(function (s) {
+        this.shapes.push(s);
+    });
+}
+
+ShapeCollection.prototype.addShape = function(shape) {
+    this.shapes.push(shape);
+}
+ShapeCollection.prototype.removeShape = function(shape) {
+    var index = this.shapes.indexOf(shape);
+    if (index >= 0) {
+        this.shapes.splice(index, 1);
+    }
+}
+ShapeCollection.prototype.shouldRenderShape = function (shape) {
+
+}
+ShapeCollection.prototype.render = function (context) {
+    this.shapes.map(function (index, shape) {
+        if (this.shouldRenderShape(shape)) {
+            shape.render(context);
+        }
+    });
+}
+ShapeCollection.prototype.update = function (context, elapsedSeconds) {
+    for (var i = 0; i < this.shapes; i++) {
+        var currShape = this.shapes[i];
+        currShape.centerX += currShape.velocityX * elapsed;
+        currShape.centerY += currShape.velocityY * elapsed;
+
+        if (currShape.centerX > canvasWidth ||
+            currShape.centerX < 0) {
+            currShape.velocityX = currShape.velocityX * -1.0;
+        }
+
+        if (currShape.centerY > canvasHeight ||
+            currShape.centerY < 0) {
+            currShape.velocityY = currShape.velocityY * -1.0;
+        }
+    }
+
+    for (var i = 0; i < this.shapes.length; j++) {
+        var currShape = this.shapes[j];
+        var collisions = this.getCollisions(currShape);
+        if (collisions.length > 0) {
+            currShape.colliding = true;
+        }
+        else {
+            currShape.colliding = false;
+        }
+    }
+}
+
+ShapeCollection.prototype.getCollisions = function (shape) {
+    var collisions = null;
+    for (var i = 0; i < this.shapes; i++) {
+        var otherShape = this.shapes[i];
+        
+        if (otherShape.collidesWith(shape)) {
+            if (!collisions) {
+                collisions = [];
+            }
+            collisions = {
+                shape: otherShape
+            };
+        }
+    }
+    return collisions;
+}
+
+var ShapeTypes = {
+    Circle: 0,
+    Rectangle: 1
+}
+
+function getRandomShapeType() {
+    if (Math.random() > .5) {
+        return ShapeTypes.Circle;
+    }
+    if (Math.random() < .5) {
+        return ShapeTypes.Rectangle;
+    }
+}
+
+var shapes = new ShapeCollection();
+for (var i = 0; i < 50; i++) {
+    var shape;
+    var shapeType = getRandomShapeType();
+    if (shapeType == ShapeTypes.Circle) {
+        shape = new Circle(
+            Math.random() * canvasWidth,
+            Math.random() * canvasHeight,
+            10.0 + Math.random() * 10.0);   
+    } 
+    else if (shapeType == ShapeTypes.Circle) {
+        shape = new Rectangle(
+            Math.random() * canvasWidth,
+            Math.random() * canvasHeight,
+            10.0 + Math.random() * 10.0);   
+    }
+    shapes.addShape(shape);
+}
+
+var lastTime = new Date();
+function tick() {
+    var now = new Date();
+    var elapsed = now - lastTime;
+    lastTime = now;
+
+    shapes.update(context, elapsed);
+    shapes.render();
+}
+
+setInterval(tick, 16);
