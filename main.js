@@ -31,7 +31,7 @@ Shape.prototype.collidesWith = function (otherShape) {
 
     var otherBoxRight = otherBox.left + otherBox.with;
     var thisBoxRight = thisBox.left + thisBox.width;
-    var otherBoxBottom = otherBox.left + otherBox.height;
+    var otherBoxBottom = otherBox.top + otherBox.height;
     var thisBoxBottom = thisBox.top + thisBox.height;
 
     if (thisBoxRight < otherBox.left ||
@@ -251,8 +251,8 @@ setInterval(tick, 16);
 function findSpecialShape() {
     return new Promise(function (resolve, reject) {
         window.setTimeout(function () {
-            var index = Math.round(Math.random() * shapes.length - 1);
-            var shape = shapes[index];
+            var index = Math.round(Math.random() * shapesCollection.shapes.length - 1);
+            var shape = shapesCollection.shapes[index];
             resolve(shape);
         });
     })
