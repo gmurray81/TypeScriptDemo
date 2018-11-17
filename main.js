@@ -9,11 +9,11 @@ Function.prototype.extend = extend;
 
 function Shape(centerX, centerY) {
     this.centerX = centerX;
-    this.centerY = centerX;
+    this.centerX = centerY;
 }
 Shape.prototype.describe = function () {
-    console.log("This is a " + this.shapeType + ", centered at " 
-    + this.centerX + ", " + this.centerY);
+    return "This is a " + this.shapeType + ", centered at " 
+    + this.centerX + ", " + this.centerY;
 }
 Shape.prototype.area = function () {
     throw 
@@ -45,6 +45,9 @@ Shape.prototype.collidesWith = function (otherShape) {
     return true;
 }
 Shape.prototype.getFillColor = function () {
+    if (this.fill) {
+        return fill;
+    }
     var red = 0 + 255 * Math.min(1, this.colliding / 5.0);
 
     return "rgba(" + red + ", 0, 0, .8)";
@@ -58,7 +61,7 @@ function Circle(centerX, centerY, radius) {
 Circle.extend(Shape);
 
 Circle.prototype.describe = function () {
-    Shape.describe() + " with radius: " + this.radius;
+    return Shape.describe() + " with radius: " + this.radius;
 }
 Circle.prototype.area = function () {
     return
@@ -71,7 +74,7 @@ Circle.prototype.render = function (context) {
     context.lineWidth = 2;
 
     context.beginPath();
-    context.arc(this.centerX, this.centerY, this.radius, 0, Math.Pi);
+    context.arc(this.centerX, this.centerY, this.radius, 0, 2.0 * Math.Pi);
     context.endPath();
     context.fill();
     context.stroke();
@@ -237,8 +240,43 @@ function tick() {
     var elapsed = now - lastTime;
     lastTime = now;
 
+    context.clearReact(o, 0, canvasWidth, canvasHeight);
     shapes.update(context, elapsed);
     shapes.render();
 }
 
 setInterval(tick, 16);
+
+
+function findSpecialShape() {
+    return new Promise(function (resolve, reject) {
+        window.setTimeout(function () {
+            var index = Math.round(Math.random() * shapes.length - 1);
+            var shape = shapes[index];
+            resolve(shape);
+        });
+    })
+}
+
+function delay(milleseconds) {
+    return new Promise(function (resolve, reject) {
+        window.setTimeout(milliseconds,
+            function () {
+                resolve();
+            });
+    });
+} 
+
+findSpecialShape().then(function(shape) {
+    shape.fill = "blue";
+    delay(1000).then(function () {
+        findSpecialShape().then(function (shape) {
+            shape.fill = "orange";
+            delay(1000).then(function () {
+               findSpecialShape().then(function (shape) {
+                    shape.fill = "green";
+               })
+            });
+        });
+    });
+})
